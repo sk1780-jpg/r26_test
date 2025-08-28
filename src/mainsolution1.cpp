@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <utility>
 
 using namespace std;
 
@@ -16,29 +17,27 @@ pair<double, double> directionFromAngle(double angle_deg) {
 }
 
 int main(int argc, char *argv[]) {
-
-  if (argc < 2) {
-    cerr << "Usage: " << argv[0] << " <gps_data_file>" << endl;
+  if (argc < 3) {
+    cerr << "Usage: " << argv[0] << " <gps_data_file> <output_file>" << endl;
     return 1;
   }
 
-  // store file path to GPS data
+  // Store file paths
   string gps_data = argv[1];
-
-  // file path to store result
   string odom_commands = argv[2];
 
-  // decode GPS data from file
+  // Decode GPS data from file
   auto result = readUbloxFile(gps_data);
-  if(static_cast<int>(result.first.lat)==0 && static_cast<int>(result.first.lon)==0 && static_cast<int>(result.second.lat)==0 && static_cast<int>(result.second.lon)==0)
-  {
-    cout<<"Error: Invalid GPS Coordinates"<<endl;
+  if (static_cast<int>(result.first.lat) == 0 &&
+      static_cast<int>(result.first.lon) == 0 &&
+      static_cast<int>(result.second.lat) == 0 &&
+      static_cast<int>(result.second.lon) == 0) {
+    cout << "Error: Invalid GPS Coordinates" << endl;
     return 1;
   }
-  cout << "Start -> Lat: " << result.first.lat << " Lon: " << result.first.lon
-       << endl;
-  cout << "Goal  -> Lat: " << result.second.lat << " Lon: " << result.second.lon
-       << endl;
+
+  cout << "Start -> Lat: " << result.first.lat << " Lon: " << result.first.lon << endl;
+  cout << "Goal  -> Lat: " << result.second.lat << " Lon: " << result.second.lon << endl;
 
   // Initialize Gridmapper with start as origin
   GPS origin = {result.first.lat, result.first.lon};
@@ -50,16 +49,19 @@ int main(int argc, char *argv[]) {
   pair<int, int> start = grid.gpstogrid(result.first);
   pair<int, int> goal = grid.gpstogrid(result.second);
 
-  cout << "Start (grid) -> (" << start.first << "," << start.second << ")"
-       << endl;
-  cout << "Goal  (grid) -> (" << goal.first << "," << goal.second << ")"
-       << endl;
+  cout << "Start (grid) -> (" << start.first << "," << start.second << ")" << endl;
+  cout << "Goal  (grid) -> (" << goal.first << "," << goal.second << ")" << endl;
 
   // Path planning
   Planner planner(grid.getGrid());
   auto path = planner.pathplanning(start, goal);
 
-  // print planned path
+  if (path.empty()) {
+    cerr << "Error: Path planning failed (no path found)." << endl;
+    return 1;
+  }
+
+  // Print planned path
   cout << "Planned Path:" << endl;
   for (auto &p : path) {
     cout << "(" << p.first << "," << p.second << ") ";
@@ -73,19 +75,15 @@ int main(int argc, char *argv[]) {
   Odometry odo(wheel_radius, rpm);
   auto commands = odo.computeCommands(path);
 
-  // computing total time and sec
+  // Write result to file
   ofstream result_file(odom_commands);
-
-  // check if file is open
   if (!result_file.is_open()) {
     cerr << "Error: cannot open file " << odom_commands << endl;
     return 1;
   }
 
-  // writing result to file
-  result_file << commands.time_sec << endl << commands.angle_deg << endl;
-
-  // closing file
+  result_file << commands.time_sec << endl;
+  result_file << commands.angle_deg << endl;
   result_file.close();
 
   return 0;
