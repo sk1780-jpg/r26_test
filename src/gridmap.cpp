@@ -1,5 +1,6 @@
 #include "gridmap.h"
 #include <iostream>
+#include <cmath>   // for floor, cos, etc.
 
 using namespace std;
 
@@ -12,8 +13,7 @@ Gridmapper::Gridmapper(GPS origin, double cellsize, int rows, int cols)
 
 pair<int, int> Gridmapper::gpstogrid(const GPS &point) const {
   double lat_m = (point.lat - origin.lat) * 111320.0;
-  double lon_m =
-      (point.lon - origin.lon) * (111320.0 * cos(deg2rad(origin.lat)));
+  double lon_m = (point.lon - origin.lon) * (111320.0 * cos(deg2rad(origin.lat)));
 
   int row = static_cast<int>(std::floor(lat_m / cellsize));
   int col = static_cast<int>(std::floor(lon_m / cellsize));
@@ -23,7 +23,10 @@ pair<int, int> Gridmapper::gpstogrid(const GPS &point) const {
 
 const vector<vector<bool>> &Gridmapper::getGrid() const { return grid; }
 
-double Gridmapper::deg2rad(double deg) { return deg * M_PI / 180.0; }
+double Gridmapper::deg2rad(double deg) {
+  const double PI = 3.141592653589793;
+  return deg * PI / 180.0;
+}
 
 bool Gridmapper::isvalid(int row, int col) const {
   return (row >= 0 && row < rows && col >= 0 && col < cols);
@@ -31,10 +34,10 @@ bool Gridmapper::isvalid(int row, int col) const {
 
 void Gridmapper::makemap() {
   for (int r = 3; r < 8; r++) {
-    this->grid[r][2] = true; // vertical wall
+    if (isvalid(r, 2)) this->grid[r][2] = true; // vertical wall
   }
   for (int c = 4; c < 9; c++) {
-    this->grid[6][c] = true; // horizontal wall
+    if (isvalid(6, c)) this->grid[6][c] = true; // horizontal wall
   }
 }
 
