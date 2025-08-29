@@ -69,4 +69,45 @@ Mention the details, such as the path planning & odometry how you tested it.
 <p align="center">
   <img src="https://github.com/teamrudra/r25-test/blob/main/datasheets/feynman-simple.jpg" width="600" height="600"/>
 </p>
+
+Understanding of the codes:
+
+1. main.cpp : This is the “controller” file.
+It reads GPS data from a file, sets up a grid map, plans a path, runs odometry, and saves results
+
+2.gridmap.cpp: This creates a grid map from GPS coordinates.
+It converts lat/lon into grid cells.
+It also marks some cells as obstacles (walls).
+
+3. odometry.cpp: This calculates how the rover should move.
+Based on wheel radius and RPM, it gives movement commands (time to move and turning angle).
+
+4.ublox_reader.cpp :This reads GPS start and goal points from a file.
+It extracts two lines → first line = start coordinates, second = goal coordinates.
+
+5.planning.cpp: finds a safe path on the grid avoiding obstacles.
+
+Problem Approaching:
+Started with compiling all files together
+g++ main.cpp gridmap.cpp planning.cpp odometry.cpp ublox_reader.cpp -o rover
+
+
+Look at error messages one by one.
+Fix easy errors first
+Missing headers (<cmath>, <vector>, <queue>, <fstream>, etc.).
+M_PI not found → replace with your own PI.
+Wrong number of arguments → fix argc checks.
+
+Check function returns
+ublox_reader.cpp must return pair<GPS, GPS>.
+planning.cpp must return vector<pair<int,int>>.
+odometry.cpp must return OdoCommand.
+
+
+Keep the logic simple
+planning.cpp → BFS search.
+odometry.cpp → distance/time from wheels.
+gridmap.cpp → convert GPS to grid and mark obstacles.
+
+
      
