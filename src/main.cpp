@@ -11,14 +11,15 @@ using namespace std;
 
 // Helper to convert angle to unit direction
 pair<double, double> directionFromAngle(double angle_deg) {
-  double rad = angle_deg * M_PI / 180.0;
+  const double PI = 3.141592653589793;
+  double rad = angle_deg * PI / 180.0;
   return {cos(rad), sin(rad)};
 }
 
 int main(int argc, char *argv[]) {
 
-  if (argc < 2) {
-    cerr << "Usage: " << argv[0] << " <gps_data_file>" << endl;
+  if (argc < 3) {
+    cerr << "Usage: " << argv[0] << " <gps_data_file> <output_file>" << endl;
     return 1;
   }
 
@@ -30,15 +31,15 @@ int main(int argc, char *argv[]) {
 
   // decode GPS data from file
   auto result = readUbloxFile(gps_data);
-  if(static_cast<int>(result.first.lat)==0 && static_cast<int>(result.first.lon)==0 && static_cast<int>(result.second.lat)==0 && static_cast<int>(result.second.lon)==0)
+  if(result.first.lat == 0.0 && result.first.lon == 0.0 &&
+     result.second.lat == 0.0 && result.second.lon == 0.0)
   {
     cout<<"Error: Invalid GPS Coordinates"<<endl;
     return 1;
   }
-  cout << "Start -> Lat: " << result.first.lat << " Lon: " << result.first.lon
-       << endl;
-  cout << "Goal  -> Lat: " << result.second.lat << " Lon: " << result.second.lon
-       << endl;
+
+  cout << "Start -> Lat: " << result.first.lat << " Lon: " << result.first.lon << endl;
+  cout << "Goal  -> Lat: " << result.second.lat << " Lon: " << result.second.lon << endl;
 
   // Initialize Gridmapper with start as origin
   GPS origin = {result.first.lat, result.first.lon};
@@ -50,10 +51,8 @@ int main(int argc, char *argv[]) {
   pair<int, int> start = grid.gpstogrid(result.first);
   pair<int, int> goal = grid.gpstogrid(result.second);
 
-  cout << "Start (grid) -> (" << start.first << "," << start.second << ")"
-       << endl;
-  cout << "Goal  (grid) -> (" << goal.first << "," << goal.second << ")"
-       << endl;
+  cout << "Start (grid) -> (" << start.first << "," << start.second << ")" << endl;
+  cout << "Goal  (grid) -> (" << goal.first << "," << goal.second << ")" << endl;
 
   // Path planning
   Planner planner(grid.getGrid());
